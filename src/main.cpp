@@ -134,26 +134,15 @@ int main() {
             cout << endl;
           }
 
-          // Due to the sign starting at 0, the orientation error is -f'(x).
-          // derivative of coeffs[0] + coeffs[1] * x -> coeffs[1]
-          double epsi = 0 - atan(coeffs[1]);
-
           // Apply latency
           double psides0 = atan(coeffs[1]);
-
           double latency_dt = 1/1000.0 * ((double) config["latency_ms"]);
           double x_latency = 0 + v * cos(0) * latency_dt;
           double y_latency = 0 + v * sin(0) * latency_dt;
           double psi_latency = 0 - v / mpc.Lf * delta * latency_dt;
           double v_latency = v + a * latency_dt;
           double epsi_latency = 0 - psides0 + v * delta / mpc.Lf * latency_dt;
-
-
-          // The cross track error is calculated by evaluating at polynomial at x, f(x)
-          // and subtracting y. x=0, y=0 because we are in car coordinates.
           double cte_latency = polyeval(coeffs, x_latency) - y_latency;
-
-          // end latency
 
           Eigen::VectorXd state(6);
           state << x_latency, y_latency, psi_latency, v_latency, cte_latency, epsi_latency; //px, py, psi, v, cte, epsi;
@@ -199,7 +188,6 @@ int main() {
           //Display the waypoints/reference line
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Yellow line
-
           msgJson["next_x"] = next_x_vals;
           msgJson["next_y"] = next_y_vals;
 
