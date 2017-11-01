@@ -8,8 +8,8 @@ using CppAD::AD;
 // We set the number of timesteps to 25
 // and the timestep evaluation frequency or evaluation
 // period to 0.05.
-size_t N = 5;
-double dt = 1;
+size_t N = 10;
+double dt = 0.6;
 
 // This value assumes the model presented in the classroom is used.
 //
@@ -25,7 +25,7 @@ const double Lf = 2.67;
 
 // Both the reference cross track and orientation errors are 0.
 // The reference velocity is set to 40 mph.
-double ref_v = 10;
+double ref_v = 40;
 
 // The solver takes all the state variables and actuator
 // variables in a singular vector. Thus, we should to establish

@@ -91,6 +91,8 @@ int main() {
           double py = j[1]["y"];
           double psi = j[1]["psi"];
           double v = j[1]["speed"];
+          double a = j[1]["throttle"];
+          double delta = j[1]["steering_angle"];
 
           Eigen::VectorXd ptsxEigen(ptsx.size());
           Eigen::VectorXd ptsyEigen(ptsy.size());
@@ -110,6 +112,9 @@ int main() {
           }
 
           auto coeffs = polyfit(ptsxEigen, ptsyEigen, 3);
+          for (auto i=0; i<coeffs.size() ; ++i) { cout << coeffs[i] << ", "; }
+          cout << endl;
+
 
           // The cross track error is calculated by evaluating at polynomial at x, f(x)
           // and subtracting y. x=0, y=0 because we are in car coordinates.
@@ -129,7 +134,7 @@ int main() {
           std::cout << "v = " << vars[3] << std::endl;
           std::cout << "cte = " << vars[4] << std::endl;
           std::cout << "epsi = " << vars[5] << std::endl;
-          std::cout << "delta = " << -vars[6] << std::endl;
+          std::cout << "delta = " << vars[6] << std::endl;
           std::cout << "a = " << vars[7] << std::endl;
           std::cout << std::endl;
 
@@ -139,7 +144,7 @@ int main() {
           * Both are in between [-1, 1].
           *
           */
-          double steer_value = -vars[6];
+          double steer_value = vars[6];
           double throttle_value = vars[7];
 
           json msgJson;
