@@ -1,17 +1,17 @@
 {
   "N": 5,
-  "dt": 0.2,
+  "dt": 0.1,
   "debug_solution" : true,
   "debug_response" : false,
   "debug_coeffs" : false,
   "latency_ms" : 0,
-  "ref_v": 30,
+  "ref_v": 50,
   "disable_throttle" : false,
   "cost": {
-    "cte": 100,
-    "epsi": 100,
+    "cte": 50,
+    "epsi": 1000,
     "v": 100,
-    "delta": 10,
+    "delta": 100,
     "a": 1,
     "delta_gap": 1000,
     "a_gap": 100
