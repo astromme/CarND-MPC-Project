@@ -3,16 +3,23 @@
 
 #include <vector>
 #include "Eigen-3.3/Eigen/Core"
+#include "json.hpp"
+
+// for convenience
+using json = nlohmann::json;
+
 
 using namespace std;
 
 class MPC {
  public:
-  MPC(size_t N, double dt, double ref_v);
+  MPC(json config);
   //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
   // the points in the simulator are connected by a Green line
   vector<double> mpc_x_vals;
   vector<double> mpc_y_vals;
+
+  json config;
 
   size_t N;
   double dt;

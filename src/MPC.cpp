@@ -23,9 +23,11 @@ class FG_eval {
   // Fitted polynomial coefficients
   Eigen::VectorXd coeffs;
   MPC *mpc; // weak pointer
-  FG_eval(Eigen::VectorXd coeffs, MPC *mpc) {
+  json config;
+  FG_eval(Eigen::VectorXd coeffs, MPC *mpc, json config) {
     this->coeffs = coeffs;
     this->mpc = mpc;
+    this->config = config;
   }
 
   typedef CPPAD_TESTVECTOR(AD<double>) ADvector;
@@ -41,21 +43,21 @@ class FG_eval {
 
     // The part of the cost based on the reference state.
     for (int t = 0; t < mpc->N; t++) {
-      fg[0] += CppAD::pow(vars[mpc->cte_start + t], 2);
-      fg[0] += CppAD::pow(vars[mpc->epsi_start + t], 2);
-      fg[0] += CppAD::pow(vars[mpc->v_start + t] - mpc->ref_v, 2);
+      fg[0] += config["cost"]["cte"]["bias"] + config["cost"]["cte"]["factor"]*CppAD::pow(vars[mpc->cte_start + t], 2);
+      fg[0] += config["cost"]["epsi"]["bias"] + config["cost"]["epsi"]["factor"]*CppAD::pow(vars[mpc->epsi_start + t], 2);
+      fg[0] += config["cost"]["v"]["bias"] + config["cost"]["v"]["factor"]*CppAD::pow(vars[mpc->v_start + t] - mpc->ref_v, 2);
     }
 
     // Minimize the use of actuators.
     for (int t = 0; t < mpc->N - 1; t++) {
-      fg[0] += CppAD::pow(vars[mpc->delta_start + t], 2);
-      fg[0] += CppAD::pow(vars[mpc->a_start + t], 2);
+      fg[0] += config["cost"]["delta"]["bias"] + config["cost"]["delta"]["factor"]*CppAD::pow(vars[mpc->delta_start + t], 2);
+      fg[0] += config["cost"]["a"]["bias"] + config["cost"]["a"]["factor"]*CppAD::pow(vars[mpc->a_start + t], 2);
     }
 
     // Minimize the value gap between sequential actuations.
     for (int t = 0; t < mpc->N - 2; t++) {
-      fg[0] += CppAD::pow(vars[mpc->delta_start + t + 1] - vars[mpc->delta_start + t], 2);
-      fg[0] += CppAD::pow(vars[mpc->a_start + t + 1] - vars[mpc->a_start + t], 2);
+      fg[0] += config["cost"]["delta_gap"]["bias"] + config["cost"]["delta_gap"]["factor"]*CppAD::pow(vars[mpc->delta_start + t + 1] - vars[mpc->delta_start + t], 2);
+      fg[0] += config["cost"]["a_gap"]["bias"] + config["cost"]["a_gap"]["factor"]*CppAD::pow(vars[mpc->a_start + t + 1] - vars[mpc->a_start + t], 2);
     }
 
     //
@@ -125,13 +127,15 @@ class FG_eval {
 //
 // MPC class definition implementation.
 //
-MPC::MPC(size_t N, double dt, double ref_v) {
+MPC::MPC(json config) {
   // We set the number of timesteps to 25
   // and the timestep evaluation frequency or evaluation
   // period to 0.05.
-  this->N = N;
-  this->dt = dt;
-  this->ref_v = ref_v;
+  this->N = config["N"];
+  this->dt = config["dt"];
+  this->ref_v = config["ref_v"];
+
+  this->config = config;
 
   // The solver takes all the state variables and actuator
   // variables in a singular vector. Thus, we should to establish
@@ -240,7 +244,7 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
 
 
   // object that computes objective and constraints
-  FG_eval fg_eval(coeffs, this);
+  FG_eval fg_eval(coeffs, this, config);
 
   //
   // NOTE: You don't have to worry about these options
@@ -279,7 +283,7 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   mpc_x_vals.clear();
   mpc_y_vals.clear();
 
-  for (int i=1; i<N; i++) {
+  for (int i=0; i<N; i++) {
     double carx = solution.x[x_start+i];
     double cary = solution.x[y_start+i];
 

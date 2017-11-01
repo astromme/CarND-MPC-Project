@@ -71,19 +71,31 @@ int main() {
   std::ifstream in("config.json");
   json config;
   in >> config;
+  assert(config.count("N") > 0);
+  assert(config.count("dt") > 0);
+  assert(config.count("ref_v") > 0);
+  assert(config.count("cost") > 0);
+  string costs[] = {"cte", "epsi", "v", "delta", "a", "delta_gap", "a_gap"};
+  for (auto cost : costs) {
+    assert(config["cost"].count(cost) > 0);
+    assert(config["cost"][cost].count("factor") > 0);
+    assert(config["cost"][cost].count("bias") > 0);
+  }
 
   uWS::Hub h;
 
   // MPC is initialized here!
-  MPC mpc(config["N"], config["dt"], config["ref_v"]);
+  MPC mpc(config);
 
-  h.onMessage([&mpc](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
+  h.onMessage([&mpc, config](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                      uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
     // The 2 signifies a websocket event
     string sdata = string(data).substr(0, length);
-    cout << sdata << endl;
+    if (config.count("debug_incoming_message") > 0 && config["debug_incoming_message"]) {
+      cout << sdata << endl;
+    }
     if (sdata.size() > 2 && sdata[0] == '4' && sdata[1] == '2') {
       string s = hasData(sdata);
       if (s != "") {
@@ -118,8 +130,10 @@ int main() {
           }
 
           auto coeffs = polyfit(ptsxEigen, ptsyEigen, 3);
-          for (auto i=0; i<coeffs.size() ; ++i) { cout << coeffs[i] << ", "; }
-          cout << endl;
+          if (config.count("debug_coeffs") > 0 && config["debug_coeffs"]) {
+            for (auto i=0; i<coeffs.size() ; ++i) { cout << coeffs[i] << ", "; }
+            cout << endl;
+          }
 
 
           // The cross track error is calculated by evaluating at polynomial at x, f(x)
@@ -134,15 +148,17 @@ int main() {
 
           auto vars = mpc.Solve(state, coeffs);
 
-          std::cout << "x = " << vars[0] << std::endl;
-          std::cout << "y = " << vars[1] << std::endl;
-          std::cout << "psi = " << vars[2] << std::endl;
-          std::cout << "v = " << vars[3] << std::endl;
-          std::cout << "cte = " << vars[4] << std::endl;
-          std::cout << "epsi = " << vars[5] << std::endl;
-          std::cout << "delta = " << vars[6] << std::endl;
-          std::cout << "a = " << vars[7] << std::endl;
-          std::cout << std::endl;
+          if (config.count("debug_solution") > 0 && config["debug_solution"]) {
+            std::cout << "x = " << vars[0] << std::endl;
+            std::cout << "y = " << vars[1] << std::endl;
+            std::cout << "psi = " << vars[2] << std::endl;
+            std::cout << "v = " << vars[3] << std::endl;
+            std::cout << "cte = " << vars[4] << std::endl;
+            std::cout << "epsi = " << vars[5] << std::endl;
+            std::cout << "delta = " << vars[6] << std::endl;
+            std::cout << "a = " << vars[7] << std::endl;
+            std::cout << std::endl;
+          }
 
           /*
           * TODO: Calculate steering angle and throttle using MPC.
@@ -152,6 +168,9 @@ int main() {
           */
           double steer_value = vars[6];
           double throttle_value = vars[7];
+          if (config["disable_throttle"]) {
+            throttle_value = 0;
+          }
 
           json msgJson;
           // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
@@ -172,7 +191,9 @@ int main() {
 
 
           auto msg = "42[\"steer\"," + msgJson.dump() + "]";
-          std::cout << msg << std::endl;
+          if (config.count("debug_response") > 0 && config["debug_response"]) {
+            std::cout << msg << std::endl;
+          }
           // Latency
           // The purpose is to mimic real driving conditions where
           // the car does actuate the commands instantly.
@@ -182,7 +203,7 @@ int main() {
           //
           // NOTE: REMEMBER TO SET THIS TO 100 MILLISECONDS BEFORE
           // SUBMITTING.
-          this_thread::sleep_for(chrono::milliseconds(0));
+          this_thread::sleep_for(chrono::milliseconds(config["latency_ms"]));
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
         }
       } else {
