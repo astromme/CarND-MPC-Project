@@ -25,5 +25,10 @@ endif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
 add_executable(mpc ${sources})
 
-target_link_libraries(mpc ipopt z ssl uv uWS)
+add_custom_command(
+        TARGET mpc POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy
+                ${CMAKE_SOURCE_DIR}/src/config.json
+                ${CMAKE_CURRENT_BINARY_DIR}/config.json)
 
+target_link_libraries(mpc ipopt z ssl uv uWS)
