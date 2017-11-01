@@ -2,6 +2,7 @@
 #include <uWS/uWS.h>
 #include <chrono>
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <thread>
 #include <vector>
@@ -78,8 +79,6 @@ int main() {
   string costs[] = {"cte", "epsi", "v", "delta", "a", "delta_gap", "a_gap"};
   for (auto cost : costs) {
     assert(config["cost"].count(cost) > 0);
-    assert(config["cost"][cost].count("factor") > 0);
-    assert(config["cost"][cost].count("bias") > 0);
   }
 
   uWS::Hub h;
@@ -149,14 +148,22 @@ int main() {
           auto vars = mpc.Solve(state, coeffs);
 
           if (config.count("debug_solution") > 0 && config["debug_solution"]) {
-            std::cout << "x = " << vars[0] << std::endl;
-            std::cout << "y = " << vars[1] << std::endl;
-            std::cout << "psi = " << vars[2] << std::endl;
-            std::cout << "v = " << vars[3] << std::endl;
-            std::cout << "cte = " << vars[4] << std::endl;
-            std::cout << "epsi = " << vars[5] << std::endl;
-            std::cout << "delta = " << vars[6] << std::endl;
-            std::cout << "a = " << vars[7] << std::endl;
+            int i = 0;
+            for (auto type : {"x", "y", "psi", "v", "cte", "epsi", "delta", "a"}) {
+              std::cout << std::setfill(' ') << setw(7) << type << ": ";
+              for (auto j=0; j < mpc.N; j++) {
+                if (mpc.solution.x[i] > 100) {
+                  std::cout << std::fixed << std::setfill(' ') << setw(5) << mpc.solution.x[i];
+                } else {
+                  std::cout << std::fixed << std::setfill(' ') << setw(5) << std::setprecision(2) << mpc.solution.x[i];
+                }
+                i += 1;
+                if (j < (mpc.N-1)) {
+                  std::cout << " >";
+                }
+              }
+              std::cout << std::endl;
+            }
             std::cout << std::endl;
           }
 

@@ -2,6 +2,8 @@
 #define MPC_H
 
 #include <vector>
+#include <cppad/cppad.hpp>
+#include <cppad/ipopt/solve.hpp>
 #include "Eigen-3.3/Eigen/Core"
 #include "json.hpp"
 
@@ -10,6 +12,9 @@ using json = nlohmann::json;
 
 
 using namespace std;
+using CppAD::AD;
+
+typedef CPPAD_TESTVECTOR(double) Dvector;
 
 class MPC {
  public:
@@ -18,6 +23,9 @@ class MPC {
   // the points in the simulator are connected by a Green line
   vector<double> mpc_x_vals;
   vector<double> mpc_y_vals;
+
+  // place to return solution
+  CppAD::ipopt::solve_result<Dvector> solution;
 
   json config;
 

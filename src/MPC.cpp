@@ -1,9 +1,5 @@
 #include "MPC.h"
-#include <cppad/cppad.hpp>
-#include <cppad/ipopt/solve.hpp>
 #include "Eigen-3.3/Eigen/Core"
-
-using CppAD::AD;
 
 // This value assumes the model presented in the classroom is used.
 //
@@ -43,21 +39,21 @@ class FG_eval {
 
     // The part of the cost based on the reference state.
     for (int t = 0; t < mpc->N; t++) {
-      fg[0] += config["cost"]["cte"]["bias"] + config["cost"]["cte"]["factor"]*CppAD::pow(vars[mpc->cte_start + t], 2);
-      fg[0] += config["cost"]["epsi"]["bias"] + config["cost"]["epsi"]["factor"]*CppAD::pow(vars[mpc->epsi_start + t], 2);
-      fg[0] += config["cost"]["v"]["bias"] + config["cost"]["v"]["factor"]*CppAD::pow(vars[mpc->v_start + t] - mpc->ref_v, 2);
+      fg[0] += config["cost"]["cte"]*CppAD::pow(vars[mpc->cte_start + t], 2);
+      fg[0] += config["cost"]["epsi"]*CppAD::pow(vars[mpc->epsi_start + t], 2);
+      fg[0] += config["cost"]["v"]*CppAD::pow(vars[mpc->v_start + t] - mpc->ref_v, 2);
     }
 
     // Minimize the use of actuators.
-    for (int t = 0; t < mpc->N - 1; t++) {
-      fg[0] += config["cost"]["delta"]["bias"] + config["cost"]["delta"]["factor"]*CppAD::pow(vars[mpc->delta_start + t], 2);
-      fg[0] += config["cost"]["a"]["bias"] + config["cost"]["a"]["factor"]*CppAD::pow(vars[mpc->a_start + t], 2);
+    for (int t = 0; t < mpc->N; t++) {
+      fg[0] += config["cost"]["delta"]*CppAD::pow(vars[mpc->delta_start + t], 2);
+      fg[0] += config["cost"]["a"]*CppAD::pow(vars[mpc->a_start + t], 2);
     }
 
     // Minimize the value gap between sequential actuations.
-    for (int t = 0; t < mpc->N - 2; t++) {
-      fg[0] += config["cost"]["delta_gap"]["bias"] + config["cost"]["delta_gap"]["factor"]*CppAD::pow(vars[mpc->delta_start + t + 1] - vars[mpc->delta_start + t], 2);
-      fg[0] += config["cost"]["a_gap"]["bias"] + config["cost"]["a_gap"]["factor"]*CppAD::pow(vars[mpc->a_start + t + 1] - vars[mpc->a_start + t], 2);
+    for (int t = 0; t < mpc->N - 1; t++) {
+      fg[0] += config["cost"]["delta_gap"]*CppAD::pow(vars[mpc->delta_start + t + 1] - vars[mpc->delta_start + t], 2);
+      fg[0] += config["cost"]["a_gap"]*CppAD::pow(vars[mpc->a_start + t + 1] - vars[mpc->a_start + t], 2);
     }
 
     //
@@ -153,8 +149,6 @@ MPC::~MPC() {}
 
 vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   bool ok = true;
-  typedef CPPAD_TESTVECTOR(double) Dvector;
-
 
   double x = state[0];
   double y = state[1];
@@ -162,9 +156,6 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   double v = state[3];
   double cte = state[4];
   double epsi = state[5];
-
-
-  size_t T = N * dt;
 
   size_t num_states = 6;
   size_t num_inputs = 2;
@@ -263,9 +254,6 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   // NOTE: Currently the solver has a maximum time limit of 0.5 seconds.
   // Change this as you see fit.
   options += "Numeric max_cpu_time          0.5\n";
-
-  // place to return solution
-  CppAD::ipopt::solve_result<Dvector> solution;
 
   // solve the problem
   CppAD::ipopt::solve<Dvector, FG_eval>(
