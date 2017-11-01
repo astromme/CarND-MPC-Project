@@ -1,18 +1,6 @@
 #include "MPC.h"
 #include "Eigen-3.3/Eigen/Core"
 
-// This value assumes the model presented in the classroom is used.
-//
-// It was obtained by measuring the radius formed by running the vehicle in the
-// simulator around in a circle with a constant steering angle and velocity on a
-// flat terrain.
-//
-// Lf was tuned until the the radius formed by the simulating the model
-// presented in the classroom matched the previous radius.
-//
-// This is the length from front to CoG that has a similar radius.
-const double Lf = 2.67;
-
 
 class FG_eval {
  public:
@@ -110,12 +98,12 @@ class FG_eval {
       // epsi[t+1] = psi[t] - psides[t] + v[t] * delta[t] / Lf * dt
       fg[1 + mpc->x_start + t] = x1 - (x0 + v0 * CppAD::cos(psi0) * mpc->dt);
       fg[1 + mpc->y_start + t] = y1 - (y0 + v0 * CppAD::sin(psi0) * mpc->dt);
-      fg[1 + mpc->psi_start + t] = psi1 - (psi0 - v0 * delta0 / Lf * mpc->dt);
+      fg[1 + mpc->psi_start + t] = psi1 - (psi0 - v0 * delta0 / mpc->Lf * mpc->dt);
       fg[1 + mpc->v_start + t] = v1 - (v0 + a0 * mpc->dt);
       fg[1 + mpc->cte_start + t] =
           cte1 - ((f0 - y0) + (v0 * CppAD::sin(epsi0) * mpc->dt));
       fg[1 + mpc->epsi_start + t] =
-          epsi1 - ((psi0 - psides0) + v0 * delta0 / Lf * mpc->dt);
+          epsi1 - ((psi0 - psides0) + v0 * delta0 / mpc->Lf * mpc->dt);
     }
   }
 };

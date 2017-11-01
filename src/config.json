@@ -4,7 +4,7 @@
   "debug_solution" : true,
   "debug_response" : false,
   "debug_coeffs" : false,
-  "latency_ms" : 0,
+  "latency_ms" : 100,
   "ref_v": 50,
   "disable_throttle" : false,
   "cost": {

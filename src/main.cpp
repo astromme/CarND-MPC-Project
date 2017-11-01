@@ -134,16 +134,29 @@ int main() {
             cout << endl;
           }
 
-
-          // The cross track error is calculated by evaluating at polynomial at x, f(x)
-          // and subtracting y. x=0, y=0 because we are in car coordinates.
-          double cte = polyeval(coeffs, 0) - 0;
           // Due to the sign starting at 0, the orientation error is -f'(x).
           // derivative of coeffs[0] + coeffs[1] * x -> coeffs[1]
           double epsi = 0 - atan(coeffs[1]);
 
+          // Apply latency
+          double psides0 = atan(coeffs[1]);
+
+          double latency_dt = 1/1000.0 * ((double) config["latency_ms"]);
+          double x_latency = 0 + v * cos(0) * latency_dt;
+          double y_latency = 0 + v * sin(0) * latency_dt;
+          double psi_latency = 0 - v / mpc.Lf * delta * latency_dt;
+          double v_latency = v + a * latency_dt;
+          double epsi_latency = 0 - psides0 + v * delta / mpc.Lf * latency_dt;
+
+
+          // The cross track error is calculated by evaluating at polynomial at x, f(x)
+          // and subtracting y. x=0, y=0 because we are in car coordinates.
+          double cte_latency = polyeval(coeffs, x_latency) - y_latency;
+
+          // end latency
+
           Eigen::VectorXd state(6);
-          state << 0, 0, 0, v, cte, epsi; //px, py, psi, v, cte, epsi;
+          state << x_latency, y_latency, psi_latency, v_latency, cte_latency, epsi_latency; //px, py, psi, v, cte, epsi;
 
           auto vars = mpc.Solve(state, coeffs);
 
@@ -167,12 +180,6 @@ int main() {
             std::cout << std::endl;
           }
 
-          /*
-          * TODO: Calculate steering angle and throttle using MPC.
-          *
-          * Both are in between [-1, 1].
-          *
-          */
           double steer_value = vars[6];
           double throttle_value = vars[7];
           if (config["disable_throttle"]) {
