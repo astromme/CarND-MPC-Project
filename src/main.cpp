@@ -2,6 +2,7 @@
 #include <uWS/uWS.h>
 #include <chrono>
 #include <iostream>
+#include <fstream>
 #include <thread>
 #include <vector>
 #include "Eigen-3.3/Eigen/Core"
@@ -66,10 +67,15 @@ Eigen::VectorXd polyfit(Eigen::VectorXd xvals, Eigen::VectorXd yvals,
 }
 
 int main() {
+  // Read config file
+  std::ifstream in("config.json");
+  json config;
+  in >> config;
+
   uWS::Hub h;
 
   // MPC is initialized here!
-  MPC mpc;
+  MPC mpc(config["N"], config["dt"], config["ref_v"]);
 
   h.onMessage([&mpc](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                      uWS::OpCode opCode) {
