@@ -141,7 +141,7 @@ int main() {
           double y_latency = 0 + v * sin(0) * latency_dt;
           double psi_latency = 0 - v / mpc.Lf * delta * latency_dt;
           double v_latency = v + a * latency_dt;
-          double epsi_latency = 0 - psides0 + v * delta / mpc.Lf * latency_dt;
+          double epsi_latency = 0 - psides0 - v * delta / mpc.Lf * latency_dt;
           double cte_latency = polyeval(coeffs, x_latency) - y_latency;
 
           Eigen::VectorXd state(6);
